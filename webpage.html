@@ -47,7 +47,7 @@ function map(scene){
 		for(var j = 0; j<bmp[i].length; j++){
 			if(bmp[i][j]==="a"){
 				wall.push(new BABYLON.MeshBuilder.CreateBox("box",{width:1,depth:1,height:1},scene))
-				wall[wall.length-1].position = new BABYLON.Vector3(j-36,0,i-1)
+				wall[wall.length-1].position = new BABYLON.Vector3(j-36,0.5,i-1)
 			}
 		}
 	}
@@ -74,24 +74,32 @@ function createScene(){
     const scene = new BABYLON.Scene(engine);
 
     // Create a camera and position it at (0, 5, -10)
-    const camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 50, 0), scene);
-	camera.rotation = new BABYLON.Vector3(90*Math.PI/180,0,0);
-
+    const camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 0.5, 0), scene);
+	camera.speed = 0.1;
     // Attach the camera to the canvas to enable user input
     camera.attachControl(canvas, true);
 
     // Create a basic light, aiming at the center of the scene
     const light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), scene);
-	map(scene);
+	var m = map(scene);
+	camera.checkCollisions = true;
+	camera.ellipsoid = new BABYLON.Vector3(0.5, 0.5, 0.5); // Camera collision ellipsoid
+	m.checkCollisions = true; // Enable collision on the mesh
+	m.material.backFaceCulling = true; // Enable backface culling
 	var showPoint = [];
 	for(var i = 0; i<point.length; i++){
 		showPoint.push(BABYLON.MeshBuilder.CreateBox("n",{size:point[i].type===1?0.1:0.5},scene));
-		showPoint[showPoint.length-1].position = new BABYLON.Vector3(point[i].pos[0],0,point[i].pos[1]);
+		showPoint[showPoint.length-1].position = new BABYLON.Vector3(point[i].pos[0],0.5,point[i].pos[1]);
+		showPoint[showPoint.length-1].checkCollisions = false;
 	}
 
     // Create a built-in "ground" shape and place it beneath the sphere
-    //const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 6, height: 6 }, scene);
+    const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 58, height: 17 }, scene);
+	ground.position.z = 8;
+    ground.checkCollisions = true;
+	ground.backfaceCulling = true;
 	scene.registerBeforeRender(function(){
+		//camera.position.y = 0.5;
 	})
     return scene;
 };
