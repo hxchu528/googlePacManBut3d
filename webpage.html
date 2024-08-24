@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<style>
+body{
+overflow-y:hidden;
+overflow-x:hidden;
+}
+#renderCanvas{
+	width:100vw;
+	height:100vh;
+}
+</style>
+<body>
+<canvas id="renderCanvas"></canvas>
+</body>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script>
+// Create the Babylon.js engine and attach it to the canvas element
+const canvas = document.getElementById('renderCanvas'); // Make sure there is a canvas element with this ID in your HTML
+const engine = new BABYLON.Engine(canvas, true);
+function expand(str) {
+	let expandedStr = '';
+	let i = 0;
+	while (i < str.length) {
+		let num = '';
+		while (!isNaN(str[i])) {
+			num += str[i];
+			i++;
+		}
+		let char = str[i];
+		expandedStr += char.repeat(parseInt(num));
+		i++;
+	}
+    return expandedStr;
+}
+function map(scene){
+	var bmp = ["58a","1a56b1a","1a1b3a1b9a1b15a1b8a1b3a1b5a1b5a1b1a","1a1b3a1b9a1b15a1b8a1b3a1b5a1b5a1b1a","1a5b9a26b3a13b1a","5a1b3a7b7a1b7a1b3a2b3a1b3a1b7a1b5a","5a1b3a1b5a1b7a1b7a1b1a6b1a1b3a1b7a1b5a","5a1b3a1b5a1b7a1b7a1b1a6b1a1b3a1b7a1b5a","6b3a3b3a1b7a1b7a1b1a6b1a1b3a1b7a6b","5a1b9a1b7a1b7a1b8a1b3a1b3a5b5a","5a1b9a1b7a1b7a10b3a1b7a1b5a","5a1b9a1b7a1b7a10b3a1b7a1b5a","1a31b8a17b1a","1a1b4a1b10a1b2a1b10a4b2a4b9a1b5a1b1a","1a1b4a1b10a1b2a1b10a1b2a1b2a1b2a1b9a1b5a1b1a","1a17b2a12b2a4b2a17b1a","58a"]
+	for(var i = 0; i<bmp.length/2; i++){
+		var temp = bmp[i];
+		bmp[i] = bmp[bmp.length-1-i];
+		bmp[bmp.length-1-i] = temp;
+	}
+	var wall = [];
+	for(var i = 0; i<bmp.length; i++){
+		bmp[i] = expand(bmp[i])
+		for(var j = 0; j<bmp[i].length; j++){
+			if(bmp[i][j]==="a"){
+				wall.push(new BABYLON.MeshBuilder.CreateBox("box",{width:1,depth:1,height:1},scene))
+				wall[wall.length-1].position = new BABYLON.Vector3(j-36,0,i-1)
+			}
+		}
+	}
+	var a = BABYLON.Mesh.MergeMeshes(wall, true, false, null, false, true);
+	const combinedMaterial = new BABYLON.StandardMaterial('combinedMaterial', scene);
+    combinedMaterial.diffuseColor = new BABYLON.Color3(0, 1, 0); // Green color
+    a.material = combinedMaterial;
+	return a;
+}
+// Function to create the scene
+function createScene(){
+    // Create a basic Babylon Scene object
+    const scene = new BABYLON.Scene(engine);
+
+    // Create a camera and position it at (0, 5, -10)
+    const camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 50, 0), scene);
+	camera.rotation = new BABYLON.Vector3(90*Math.PI/180,0,0);
+
+    // Attach the camera to the canvas to enable user input
+    camera.attachControl(canvas, true);
+
+    // Create a basic light, aiming at the center of the scene
+    const light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), scene);
+	map(scene);
+    // Create a built-in "ground" shape and place it beneath the sphere
+    //const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 6, height: 6 }, scene);
+	scene.registerBeforeRender(function(){
+	})
+    return scene;
+};
+
+// Call the createScene function
+const scene = createScene();
+
+// Start the BabylonJS rendering loop
+engine.runRenderLoop(() => {
+    scene.render();
+});
+
+// Resize the engine when the window is resized
+window.addEventListener('resize', () => {
+    engine.resize();
+});
+
+</script>
+</html>
