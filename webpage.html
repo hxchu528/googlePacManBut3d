@@ -110,6 +110,11 @@ function createScene(){
 		camera.position.y = 0.6;
 		const forwardRay = camera.getForwardRay();
 		light.direction = forwardRay.direction;
+		for(var i = 0; i<showPoint.length; i++){
+			if(BABYLON.Vector3.Distance(camera.position, showPoint[i].position)<size){
+				showPoint[i].dispose();
+			}
+		}
 		if(keys["a"]){camera.rotation.y-=3*Math.PI/180;}
 		if(keys["d"]){camera.rotation.y+=3*Math.PI/180;}
 	})
