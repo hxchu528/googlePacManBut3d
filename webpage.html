@@ -97,9 +97,12 @@ function createScene(){
 	m.material.backFaceCulling = true; // Enable backface culling
 	var showPoint = [];
 	for(var i = 0; i<point.length; i++){
-		showPoint.push(BABYLON.MeshBuilder.CreateBox("n",{size:point[i].type===1?0.1:0.5},scene));
+		showPoint.push(BABYLON.MeshBuilder.CreateSphere("n",{diameter:point[i].type===1?0.1:0.5},scene));
 		showPoint[showPoint.length-1].position = new BABYLON.Vector3(point[i].pos[0],0.5,point[i].pos[1]);
 		showPoint[showPoint.length-1].checkCollisions = false;
+		var mat = new BABYLON.StandardMaterial('mat', scene);
+		mat.diffuseColor = new BABYLON.Color3(1, 1, 0);
+		showPoint[showPoint.length-1].material = mat;
 	}
 
     // Create a built-in "ground" shape and place it beneath the sphere
