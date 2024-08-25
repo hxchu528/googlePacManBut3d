@@ -73,17 +73,38 @@ function map(scene){
     a.material = combinedMaterial;
 	return a;
 }
+function ray (origin, direction, scene) {
+	const dir = new BABYLON.Vector3(Math.cos(direction),0,Math.sin(direction));
+	const ray = new BABYLON.Ray(origin, dir, 100);
+	const hit = scene.pickWithRay(ray);
+	if (hit.hit) {
+		return BABYLON.Vector3.Distance(origin, hit.pickedPoint);
+	}
+	return undefined;
+};
+function ghost(scene){
+	const cylinder = BABYLON.MeshBuilder.CreateCylinder("cylinder", { height: size/2, diameterTop: 0.4*size, diameterBottom: 0.4*size, tessellation: 24 }, scene);
+	const sphere = BABYLON.MeshBuilder.CreateSphere("sphere",{diameter:0.4*size},scene);
+	cylinder.position = new BABYLON.Vector3(0,size/4,0);
+	sphere.position = new BABYLON.Vector3(0,size/2,0);
+	var a = BABYLON.Mesh.MergeMeshes([cylinder,sphere], true, false, null, false, true);
+	const combinedMaterial = new BABYLON.StandardMaterial('combinedMaterial', scene);
+    combinedMaterial.diffuseColor = new BABYLON.Color3(0, 1, 0); // Green color
+    a.material = combinedMaterial;
+	return a;
+}
 // Function to create the scene
 function createScene(){
     // Create a basic Babylon Scene object
     const scene = new BABYLON.Scene(engine);
-
     // Create a camera and position it at (0, 5, -10)
     const camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 0.5, 0), scene);
 	camera.speed = 0.2;
     // Attach the camera to the canvas to enable user input
     camera.attachControl(canvas, true);
-
+	var cam2 = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(-7*size, 60*size, 19/2*size), scene);
+	cam2.setTarget(BABYLON.Vector3.Zero());
+	cam2.rotation = new BABYLON.Vector3(Math.PI/2,0,0);
     // Create a basic light, aiming at the center of the scene
     const bklight = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), scene);
 	bklight.intensity = 0.4;
@@ -97,29 +118,42 @@ function createScene(){
 	m.material.backFaceCulling = true; // Enable backface culling
 	var showPoint = [];
 	for(var i = 0; i<point.length; i++){
-		showPoint.push(BABYLON.MeshBuilder.CreateSphere("n",{diameter:point[i].type===1?0.1:0.5},scene));
+		showPoint.push(BABYLON.MeshBuilder.CreateSphere("n",{diameter:point[i].type===1?0.25:0.5},scene));
 		showPoint[showPoint.length-1].position = new BABYLON.Vector3(point[i].pos[0],0.5,point[i].pos[1]);
 		showPoint[showPoint.length-1].checkCollisions = false;
 		var mat = new BABYLON.StandardMaterial('mat', scene);
 		mat.diffuseColor = new BABYLON.Color3(1, 1, 0);
 		showPoint[showPoint.length-1].material = mat;
 	}
-
+	var g = ghost(scene);
     // Create a built-in "ground" shape and place it beneath the sphere
     const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 58*size, height: 17*size }, scene);
 	ground.position.z = 7*size;
 	ground.position.x = -7.5*size;
 	scene.registerBeforeRender(function(){
+		scene.activeCamera = camera;
 		camera.position.y = 0.6;
 		const forwardRay = camera.getForwardRay();
 		light.direction = forwardRay.direction;
+		light.intensity = 0.7;
 		for(var i = 0; i<showPoint.length; i++){
 			if(BABYLON.Vector3.Distance(camera.position, showPoint[i].position)<size){
 				showPoint[i].dispose();
 			}
 		}
+		//var dir = [ray(g.position,0,scene),ray(g.position,Math.PI/4,scene),ray(g.position,Math.PI/2,scene),ray(g.position,Math.PI*3/4,scene),ray(g.position,Math.PI,scene),ray(g.position,Math.PI*5/4,scene),ray(g.position,Math.PI*6/4,scene),ray(g.position,Math.PI*7/4,scene)];
+		//var max = [dir[0],0];
+		//for(var i = 0; i<dir.length; i++){
+		//	if(max[0]<dir[i] && dir[i]!=undefined){max[0] = dir[i];max[1] = i}
+		//}
+		//g.position.x+=Math.cos(max[1]*Math.PI/4)/4
+		//g.position.z+=Math.sin(max[1]*Math.PI/4)/4
 		if(keys["a"]){camera.rotation.y-=3*Math.PI/180;}
 		if(keys["d"]){camera.rotation.y+=3*Math.PI/180;}
+		if(keys["e"]){
+			scene.activeCamera = cam2;
+			light.intensity = 0;
+		}
 	})
     return scene;
 };
