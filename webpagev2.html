@@ -40,7 +40,7 @@ function expand(str) {
 }
 function scale(n,or1,or2,r1,r2){return r1+(r2-r1)*((n-or1)/(or2-or1));}
 function map(scene){
-	var bmp = ["58a","1a56b1a","1a1b3a1b9a1b15a1b8a1c3a1b5a1b5a1b1a","1a1b3a1b9a1b15a1b8a1c3a1b5a1b5a1b1a","1a5b9a17b9c3a13b1a","5a1b3a7b7a1b7a1c3a2c3a1c3a1b7a1b5a","5a1b3a1b5a1b7a1b7a1c1a6c1a1c3a1b7a1b5a","5a1b3a1b5a1b7a1b7a1c1a6c1a1c3a1b7a1b5a","5c1b3a3b3a1b7a1b7a1c1a6c1a1c3a1b7a1b5c","5a1b9a1b7a1b7a1c8a1c3a1b3a5b5a","5a1b9a1b7a1b7a10c3a1b7a1b5a","5a1b9a1b7a1b7a10c3a1b7a1b5a","1a31b8a17b1a","1a1b4a1b10a1b2a1b10a4b2a4b9a1b5a1b1a","1a1b4a1b10a1b2a1b10a1b2a1b2a1b2a1b9a1b5a1b1a","1a17b2a12b2a1b2c1b2a17b1a","58a"];
+	var bmp = ["58a","1a56b1a","1a1b3a1b9a1b15a1b8a1c3a1b5a1b5a1b1a","1a1b3a1b9a1b15a1b8a1c3a1b5a1b5a1b1a","1a5b9a17b9c3a13b1a","5a1b3a7b7a1b7a1c3a2c3a1c3a1b7a1b5a","5a1b3a1b5a1b7a1b7a1c1a6c1a1c3a1b7a1b5a","5a1b3a1b5a1b7a1b7a1c1a6c1a1c3a1b7a1b5a","5c1b3a3b3a1b7a1b7a1c1a6c1a1c3a1b7a1b5c","5a1b9a1b7a1b7a1c8a1c3a1b3a5b5a","5a1b9a1b7a1b7a1c8a1c3a1b7a1b5a","5a1b9a1b7a1b7a10c3a1b7a1b5a","1a31b8a17b1a","1a1b4a1b10a1b2a1b10a4b2a4b9a1b5a1b1a","1a1b4a1b10a1b2a1b10a1b2a1b2a1b2a1b9a1b5a1b1a","1a17b2a12b2a1b2c1b2a17b1a","58a"];
 	for(var i = 0; i<bmp.length/2; i++){
 		var temp = bmp[i];
 		bmp[i] = bmp[bmp.length-1-i];
@@ -90,32 +90,45 @@ function ghost(scene){
 	sphere.position = new BABYLON.Vector3(0,size/2,0);
 	var a = BABYLON.Mesh.MergeMeshes([cylinder,sphere], true, false, null, false, true);
 	const combinedMaterial = new BABYLON.StandardMaterial('combinedMaterial', scene);
-    combinedMaterial.diffuseColor = new BABYLON.Color3(0, 1, 0); // Green color
+    combinedMaterial.diffuseColor = new BABYLON.Color3(1, 0, 0); // Green color
     a.material = combinedMaterial;
 	return a;
 }
-function red(g,p,m,d){
-	var ray = [new BABYLON.Ray(pos,new BABYLON.Vector3(1,0,0),size/2),new BABYLON.Ray(pos,new BABYLON.Vector3(0,0,1),size/2),new BABYLON.Ray(pos,new BABYLON.Vector3(-1,0,0),size/2),new BABYLON.Ray(pos,new BABYLON.Vector3(0,0,-1),size/2)];
+function red(g,p,m,d){try{
+	var ray = [new BABYLON.Ray(g.position,new BABYLON.Vector3(1,0,0),size/2),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,1),size/2),new BABYLON.Ray(g.position,new BABYLON.Vector3(-1,0,0),size/2),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,-1),size/2)];
+    
 	var poss = [0,0,0,0];
 	for(var i = 0; i<ray.length; i++){
-		if(!m.intersects(ray[i]).hit){pos[i] = 1;}
+		if(!m.intersects(ray[i]).hit){poss[i] = 1;}
 	}
-	if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){d = d;}
 	if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){d += 1;}
-	if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){d -= 1;}
-	if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
+	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){d +=3;}
+	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
+		var ang = Math.atan2(p.position.z-g.position.z,p.position.x-g.position.x);
+		ang = (d*Math.PI/2)-ang*180/Math.PI;
+		d += ang>0?3:ang<0?1:0;
+	}
+	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
 		var ang = Math.atan2(p.position.x-g.position.x,p.position.z-g.position.z);
 		ang = Math.floor(4*ang/360);
 		d = ang==d+2?d+2:ang===d+1?d+1:d+3;
 	}
-	if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
+	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
+		var ang = Math.atan2(p.position.x-g.position.x,p.position.z-g.position.z);
+		document.write(d+" "+((d*Math.PI/2)-ang*180/Math.PI)+"<br>");
+		ang = (d*Math.PI/2)-ang*180/Math.PI;
+		d = ang==d+2?d+2:ang===d+1?d+1:d+3;
+	}
+	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
 		var ang = Math.atan2(p.position.x-g.position.x,p.position.z-g.position.z);
 		ang = Math.floor(4*ang/360);
 		d = ang==d+2?d+2:ang===d+1?d+1:ang===d+3?d+3:d+4;
 	}
-	if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
+	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
 		d += 2;
 	}
+	if(d>=4){d = d%4;}
+	return d;}catch(e){document.write(e)}
 	/*
 	g.position.x+=Math.cos(dir);
 	g.position.z+=Math.sin(dir);
@@ -153,15 +166,24 @@ function createScene(){
 		showPoint[showPoint.length-1].material = mat;
 	}
 	var g = ghost(scene);
-	g.position = new BABYLON.Vector3(-1*size,0.1,7*size);
+	g.position = new BABYLON.Vector3(-1*size,0.1,4*size);
 	var gd = 0;
+	var gp = [g.position.x+Math.cos(gd*Math.PI/2),g.position.z+Math.sin(gd*Math.PI/2)]
     const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 58*size, height: 17*size }, scene);
 	const material = new BABYLON.StandardMaterial('mat', scene);
-	material.diffuseColor = new BABYLON.Color3(0, 1, 0);
+	material.diffuseColor = new BABYLON.Color3(1, 1, 1);
 	ground.material = material;
 	ground.position.z = 7*size;
 	ground.position.x = -7.5*size;
-	scene.registerBeforeRender(function(){
+	scene.registerBeforeRender(function(){//try{
+		if((gp[0]-g.position.x)**2+(gp[1]-g.position.z)**2<0.5){
+			g.position.x = gp[0];
+			g.position.z = gp[1];
+			gd = red(g,camera,m,gd);
+			gp = [g.position.x+Math.cos(gd*Math.PI/2),g.position.z+Math.sin(gd*Math.PI/2)]
+		}
+		g.position.x+=Math.cos(gd*Math.PI/2);
+		g.position.z+=Math.sin(gd*Math.PI/2);
 		scene.activeCamera = camera;
 		camera.position.y = 0.6;
 		const forwardRay = camera.getForwardRay();
@@ -172,6 +194,7 @@ function createScene(){
 				showPoint[i].dispose();
 			}
 		}
+        //}catch(e){document.write(e)}
 		//var dir = [ray(g.position,0,scene),ray(g.position,Math.PI/4,scene),ray(g.position,Math.PI/2,scene),ray(g.position,Math.PI*3/4,scene),ray(g.position,Math.PI,scene),ray(g.position,Math.PI*5/4,scene),ray(g.position,Math.PI*6/4,scene),ray(g.position,Math.PI*7/4,scene)];
 		//var max = [dir[0],0];
 		//for(var i = 0; i<dir.length; i++){
