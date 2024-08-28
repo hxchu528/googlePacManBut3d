@@ -94,13 +94,39 @@ function ghost(scene){
 	const sphere = BABYLON.MeshBuilder.CreateSphere("sphere",{diameter:0.4*size},scene);
 	cylinder.position = new BABYLON.Vector3(0,size/4,0);
 	sphere.position = new BABYLON.Vector3(0,size/2,0);
+	var spmat = new BABYLON.StandardMaterial('combinedMaterial', scene);
+	spmat.diffuseColor = new BABYLON.Color3(1, 0, 0);
+	sphere.material = spmat;
+	var cymat = new BABYLON.StandardMaterial('combinedMaterial', scene);
+	const texture = new BABYLON.DynamicTexture("texture",{width:200,height:100},scene);
+	cymat.diffuseTexture = texture;
+	cylinder.material = cymat;
+	const ctx = texture.getContext();
+	ctx.fillStyle = "red";
+	ctx.fillRect(0,0,200,100);
+	ctx.fillStyle = "white";
+	ctx.beginPath();
+		ctx.arc(185,30,7,0,2*Math.PI);
+	ctx.stroke();
+	ctx.fill();
+	ctx.beginPath();
+		ctx.arc(15,30,7,0,2*Math.PI);
+	ctx.stroke();
+	ctx.fill();
+	ctx.fillStyle = "black";
+	ctx.beginPath();
+		ctx.arc(185,30,3,0,2*Math.PI);
+	ctx.stroke();
+	ctx.fill();
+	ctx.beginPath();
+		ctx.arc(15,30,3,0,2*Math.PI);
+	ctx.stroke();
+	ctx.fill();
+	texture.update();
 	var a = BABYLON.Mesh.MergeMeshes([cylinder,sphere], true, false, null, false, true);
-	const combinedMaterial = new BABYLON.StandardMaterial('combinedMaterial', scene);
-    combinedMaterial.diffuseColor = new BABYLON.Color3(1, 0, 0); // Green color
-    a.material = combinedMaterial;
 	return a;
 }
-function red(g,p,m,d){try{
+function red(g,p,m,d){
 	var ray = [new BABYLON.Ray(g.position,new BABYLON.Vector3(1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,1),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(-1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,-1),size)];
     
 	var poss = [0,0,0,0];
@@ -113,35 +139,74 @@ function red(g,p,m,d){try{
 		var ang = Math.atan2(p.position.z-g.position.z,p.position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===3?3:ang===2?2:1;
+		d += ang===3?3:1;
 	}
 	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
 		var ang =  Math.atan2(p.position.z-g.position.z,p.position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===1?1:ang===2?2:0;
+		d += ang===1?1:0;
 	}
 	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
 		var ang = Math.atan2(p.position.z-g.position.z,p.position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===2?2:ang===3?3:0;
+		d += ang===3?3:0;
 	}
 	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
 		var ang = Math.atan2(p.position.z-g.position.z,p.position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===0?0:ang===1?1:ang===2?2:3;
+		d += ang===0?0:ang===1?1:3;
 	}
 	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
 		d += 2;
 	}
 	if(d>=4){d = d%4;}
-	return d;}catch(e){document.write(e)}
-	/*
-	g.position.x+=Math.cos(dir);
-	g.position.z+=Math.sin(dir);
-	*/
+	return d;
+}
+function pink(g,p,m,d){
+	var ray = [new BABYLON.Ray(g.position,new BABYLON.Vector3(1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,1),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(-1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,-1),size)];
+    
+	var poss = [0,0,0,0];
+	for(var i = 0; i<ray.length; i++){
+		if(!m.intersects(ray[i]).hit){poss[i] = 1;}
+	}
+	var rot = Math.round(scale((p.rotation.y + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
+	rot += 1;
+	rot = rot<0?4+rot:rot%4;
+	var position = {x:Math.round(scale(p.position.x,-36*size,21*size,-36,21))*size-Math.cos(rot*Math.PI/2)*size*4,z:Math.round(scale(p.position.z,-1*size,16*size,-1,16))*size+Math.sin(rot*Math.PI/2)*size*4};
+	if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){d += 1;}
+	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){d +=3;}
+	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
+		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
+		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
+		ang = ang<0?4+ang:ang;
+		d += ang===3?3:1;
+	}
+	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
+		var ang =  Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
+		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
+		ang = ang<0?4+ang:ang;
+		d += ang===1?1:0;
+	}
+	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
+		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
+		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
+		ang = ang<0?4+ang:ang;
+		d += ang===3?3:0;
+	}
+	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
+		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
+		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
+		ang = ang<0?4+ang:ang;
+		d += ang===1?1:ang===2?2:3;
+	}
+	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
+		d += 2;
+	}
+	if(d>=4){d = d%4;}
+	return d;
 }
 // Function to create the scene
 function createScene(){
@@ -184,7 +249,7 @@ function createScene(){
 	ground.material = material;
 	ground.position.z = 7*size;
 	ground.position.x = -7.5*size;
-	scene.registerBeforeRender(function(){//try{
+	scene.registerBeforeRender(function(){
 		if((gp[0]-g.position.x)**2+(gp[1]-g.position.z)**2<0.5){
 			g.position.x = gp[0];
 			g.position.z = gp[1];
@@ -195,8 +260,8 @@ function createScene(){
 			gp = [g.position.x+Math.cos(gd*Math.PI/2)*size,g.position.z+Math.sin(gd*Math.PI/2)*size]}
 		if(g.position.x>21*size){g.position.x = -36*size;gd = red(g,camera,m,gd);
 			gp = [g.position.x+Math.cos(gd*Math.PI/2)*size,g.position.z+Math.sin(gd*Math.PI/2)*size]}
-		g.position.x+=Math.cos(gd*Math.PI/2)*0.2;
-		g.position.z+=Math.sin(gd*Math.PI/2)*0.2;
+		g.position.x+=Math.cos(gd*Math.PI/2)*0.1;
+		g.position.z+=Math.sin(gd*Math.PI/2)*0.1;
 		scene.activeCamera = camera;
 		camera.position.y = 0.6;
 		const forwardRay = camera.getForwardRay();
