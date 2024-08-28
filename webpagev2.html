@@ -89,20 +89,20 @@ function ray (origin, direction, scene) {
 	}
 	return undefined;
 };
-function ghost(scene){
+function ghost(scene,color = "red"){
 	const cylinder = BABYLON.MeshBuilder.CreateCylinder("cylinder", { height: size/2, diameterTop: 0.4*size, diameterBottom: 0.4*size, tessellation: 24 }, scene);
 	const sphere = BABYLON.MeshBuilder.CreateSphere("sphere",{diameter:0.4*size},scene);
 	cylinder.position = new BABYLON.Vector3(0,size/4,0);
 	sphere.position = new BABYLON.Vector3(0,size/2,0);
 	var spmat = new BABYLON.StandardMaterial('combinedMaterial', scene);
-	spmat.diffuseColor = new BABYLON.Color3(1, 0, 0);
+	spmat.diffuseColor = color==="red"?new BABYLON.Color3(1, 0, 0):new BABYLON.Color3(1, 0.75, 1);
 	sphere.material = spmat;
 	var cymat = new BABYLON.StandardMaterial('combinedMaterial', scene);
 	const texture = new BABYLON.DynamicTexture("texture",{width:200,height:100},scene);
 	cymat.diffuseTexture = texture;
 	cylinder.material = cymat;
 	const ctx = texture.getContext();
-	ctx.fillStyle = "red";
+	ctx.fillStyle = color==="red"?"rgb(255,0,0)":"rgb(255,191,255)";
 	ctx.fillRect(0,0,200,100);
 	ctx.fillStyle = "white";
 	ctx.beginPath();
@@ -200,7 +200,7 @@ function pink(g,p,m,d){
 		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===1?1:ang===2?2:3;
+		d += ang===1?1:ang===0?0:3;
 	}
 	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
 		d += 2;
@@ -239,10 +239,14 @@ function createScene(){
 		mat.diffuseColor = new BABYLON.Color3(1, 1, 0);
 		showPoint[showPoint.length-1].material = mat;
 	}
-	var g = ghost(scene);
-	g.position = new BABYLON.Vector3(-1*size,0.1,11*size);
-	var gd = 0;
-	var gp = [g.position.x+Math.cos(gd*Math.PI/2)*size,g.position.z+Math.sin(gd*Math.PI/2)*size]
+	var g = [ghost(scene,"red"),ghost(scene,"pink")];
+	g[0].position = new BABYLON.Vector3(-1*size,0.1,11*size);
+	g[1].position = new BABYLON.Vector3(1*size,0.1,11*size);
+	var gd = [0,2];
+	var gp = [];
+	for(var i = 0; i<g.length; i++){
+	gp.push([g[i].position.x+Math.cos(gd[i]*Math.PI/2)*size,g[i].position.z+Math.sin(gd[i]*Math.PI/2)*size])
+	}
     const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 58*size, height: 17*size }, scene);
 	const material = new BABYLON.StandardMaterial('mat', scene);
 	material.diffuseColor = new BABYLON.Color3(1, 1, 1);
@@ -250,18 +254,25 @@ function createScene(){
 	ground.position.z = 7*size;
 	ground.position.x = -7.5*size;
 	scene.registerBeforeRender(function(){
-		if((gp[0]-g.position.x)**2+(gp[1]-g.position.z)**2<0.5){
-			g.position.x = gp[0];
-			g.position.z = gp[1];
-			gd = red(g,camera,m,gd);
-			gp = [g.position.x+Math.cos(gd*Math.PI/2)*size,g.position.z+Math.sin(gd*Math.PI/2)*size]
+		for(var i = 0; i<g.length; i+=1){
+		if((gp[i][0]-g[i].position.x)**2+(gp[i][1]-g[i].position.z)**2<0.5){
+			g[i].position.x = gp[i][0];
+			g[i].position.z = gp[i][1];
+			gd[i] = i===0?red(g[i],camera,m,gd[i]):pink(g[i],camera,m,gd[i]);
+			gp[i] = [g[i].position.x+Math.cos(gd[i]*Math.PI/2)*size,g[i].position.z+Math.sin(gd[i]*Math.PI/2)*size]
 		}
-		if(g.position.x<-36*size){g.position.x = 21*size;gd = red(g,camera,m,gd);
-			gp = [g.position.x+Math.cos(gd*Math.PI/2)*size,g.position.z+Math.sin(gd*Math.PI/2)*size]}
-		if(g.position.x>21*size){g.position.x = -36*size;gd = red(g,camera,m,gd);
-			gp = [g.position.x+Math.cos(gd*Math.PI/2)*size,g.position.z+Math.sin(gd*Math.PI/2)*size]}
-		g.position.x+=Math.cos(gd*Math.PI/2)*0.1;
-		g.position.z+=Math.sin(gd*Math.PI/2)*0.1;
+		g[i].rotation = new BABYLON.Vector3(0,gd[i]*Math.PI/2,0);
+		if(g[i].position.x<-36*size){g[i].position.x = 21*size;gd[i] = pink(g[i],camera,m,gd[i]);
+			gp[i] = [g[i].position.x+Math.cos(gd[i]*Math.PI/2)*size,g[i].position.z+Math.sin(gd[i]*Math.PI/2)*size]
+		}
+		if(g[i].position.x>21*size){
+			g[i].position.x = -36*size;
+			gd[i] = i===0?red(g[i],camera,m,gd[i]):pink(g[i],camera,m,gd[i]);
+			gp[i] = [g[i].position.x+Math.cos(gd[i]*Math.PI/2)*size,g[i].position.z+Math.sin(gd[i]*Math.PI/2)*size]
+		}
+			g[i].position.x+=Math.cos(gd[i]*Math.PI/2)*0.1;
+			g[i].position.z+=Math.sin(gd[i]*Math.PI/2)*0.1;
+		}
 		scene.activeCamera = camera;
 		camera.position.y = 0.6;
 		const forwardRay = camera.getForwardRay();
