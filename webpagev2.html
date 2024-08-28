@@ -40,7 +40,7 @@ function expand(str) {
 }
 function scale(n,or1,or2,r1,r2){return r1+(r2-r1)*((n-or1)/(or2-or1));}
 function map(scene){
-	var bmp = ["58a","1a56b1a","1a1b3a1b9a1b15a1b8a1c3a1b5a1b5a1b1a","1a1b3a1b9a1b15a1b8a1c3a1b5a1b5a1b1a","1a5b9a17b9c3a13b1a","5a1b3a7b7a1b7a1c3a2c3a1c3a1b7a1b5a","5a1b3a1b5a1b7a1b7a1c1a6c1a1c3a1b7a1b5a","5a1b3a1b5a1b7a1b7a1c1a6c1a1c3a1b7a1b5a","5c1b3a3b3a1b7a1b7a1c1a6c1a1c3a1b7a1b5c","5a1b9a1b7a1b7a1c8a1c3a1b3a5b5a","5a1b9a1b7a1b7a1c8a1c3a1b7a1b5a","5a1b9a1b7a1b7a10c3a1b7a1b5a","1a31b8a17b1a","1a1b4a1b10a1b2a1b10a4b2a4b9a1b5a1b1a","1a1b4a1b10a1b2a1b10a1b2a1b2a1b2a1b9a1b5a1b1a","1a17b2a12b2a1b2c1b2a17b1a","58a"];
+	var bmp = ["58a","1a56b1a","1a1b3a1b9a1b15a1b8a1c3a1b5a1b5a1b1a","1a1b3a1b9a1b15a1b8a1c3a1b5a1b5a1b1a","1a5b9a17b9c3a13b1a","5a1b3a7b7a1b7a1c3a2d3a1c3a1b7a1b5a","5a1b3a1b5a1b7a1b7a1c1a6c1a1c3a1b7a1b5a","5a1b3a1b5a1b7a1b7a1c1a6c1a1c3a1b7a1b5a","5c1b3a3b3a1b7a1b7a1c1a6c1a1c3a1b7a1b5c","5a1b9a1b7a1b7a1c8a1c3a1b3a5b5a","5a1b9a1b7a1b7a1c8a1c3a1b7a1b5a","5a1b9a1b7a1b7a10c3a1b7a1b5a","1a31b8a17b1a","1a1b4a1b10a1b2a1b10a4b2a4b9a1b5a1b1a","1a1b4a1b10a1b2a1b10a1b2a1b2a1b2a1b9a1b5a1b1a","1a17b2a12b2a1b2c1b2a17b1a","58a"];
 	for(var i = 0; i<bmp.length/2; i++){
 		var temp = bmp[i];
 		bmp[i] = bmp[bmp.length-1-i];
@@ -53,13 +53,22 @@ function map(scene){
 			if(bmp[i][j]==="a"){
 				wall.push(new BABYLON.MeshBuilder.CreateBox("box",{width:1*size,depth:1*size,height:1*size},scene))
 				wall[wall.length-1].position = new BABYLON.Vector3((j-36)*size,0.5*size,(i-1)*size)
+				var mat = new BABYLON.StandardMaterial("mat",scene);
+				mat.diffuseColor = new BABYLON.Color3(0,1,0);
+				wall[wall.length-1].material = mat;
+			}else if(bmp[i][j]==="d"){
+				wall.push(new BABYLON.MeshBuilder.CreateBox("box",{width:1*size,depth:1*size,height:1*size},scene))
+				wall[wall.length-1].position = new BABYLON.Vector3((j-36)*size,0.5*size,(i-1)*size)
+				var mat = new BABYLON.StandardMaterial("mat",scene);
+				mat.diffuseColor = new BABYLON.Color3(1,1,0);
+				wall[wall.length-1].material = mat;
 			}
 		}
 	}
 	//shift position
 	for(var i = -35; i<=20; i++){
 		for(var j = 0; j<=15; j++){
-			if(bmp[j+1][i+36]!="a" && bmp[j+1][i+36]!="c"){
+			if(bmp[j+1][i+36]!="a" && bmp[j+1][i+36]!="c" && bmp[j+1][i+36]!="d"){
 				if((j===12 && i===-35)||(j===0 && i===-35)||(j===7&&i===-25)||(j===12&&i===20)||(j===0&&i===20)){
 				point.push({pos:[i*size,j*size],type:2});
 				}else{
@@ -69,9 +78,6 @@ function map(scene){
 		}
 	}
 	var a = BABYLON.Mesh.MergeMeshes(wall, true, false, null, false, true);
-	const combinedMaterial = new BABYLON.StandardMaterial('combinedMaterial', scene);
-    combinedMaterial.diffuseColor = new BABYLON.Color3(0, 1, 0); // Green color
-    a.material = combinedMaterial;
 	return a;
 }
 function ray (origin, direction, scene) {
@@ -169,7 +175,7 @@ function createScene(){
 		showPoint[showPoint.length-1].material = mat;
 	}
 	var g = ghost(scene);
-	g.position = new BABYLON.Vector3(-1*size,0.1,4*size);
+	g.position = new BABYLON.Vector3(-1*size,0.1,11*size);
 	var gd = 0;
 	var gp = [g.position.x+Math.cos(gd*Math.PI/2)*size,g.position.z+Math.sin(gd*Math.PI/2)*size]
     const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 58*size, height: 17*size }, scene);
@@ -185,10 +191,12 @@ function createScene(){
 			gd = red(g,camera,m,gd);
 			gp = [g.position.x+Math.cos(gd*Math.PI/2)*size,g.position.z+Math.sin(gd*Math.PI/2)*size]
 		}
-		if(g.position.x<-36*size){g.position.x = 21*size;}
-		if(g.position.x>21*size){g.position.x = -36*size;}
-		g.position.x+=Math.cos(gd*Math.PI/2)/4;
-		g.position.z+=Math.sin(gd*Math.PI/2)/4;
+		if(g.position.x<-36*size){g.position.x = 21*size;gd = red(g,camera,m,gd);
+			gp = [g.position.x+Math.cos(gd*Math.PI/2)*size,g.position.z+Math.sin(gd*Math.PI/2)*size]}
+		if(g.position.x>21*size){g.position.x = -36*size;gd = red(g,camera,m,gd);
+			gp = [g.position.x+Math.cos(gd*Math.PI/2)*size,g.position.z+Math.sin(gd*Math.PI/2)*size]}
+		g.position.x+=Math.cos(gd*Math.PI/2)*0.2;
+		g.position.z+=Math.sin(gd*Math.PI/2)*0.2;
 		scene.activeCamera = camera;
 		camera.position.y = 0.6;
 		const forwardRay = camera.getForwardRay();
