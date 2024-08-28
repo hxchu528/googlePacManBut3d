@@ -90,13 +90,14 @@ function ray (origin, direction, scene) {
 	}
 	return undefined;
 };
-function ghost(scene,color = "red"){
+function ghost(scene,color = "red", scare = false){
 	const cylinder = BABYLON.MeshBuilder.CreateCylinder("cylinder", { height: size/2, diameterTop: 0.4*size, diameterBottom: 0.4*size, tessellation: 24 }, scene);
 	const sphere = BABYLON.MeshBuilder.CreateSphere("sphere",{diameter:0.4*size},scene);
 	cylinder.position = new BABYLON.Vector3(0,size/4,0);
 	sphere.position = new BABYLON.Vector3(0,size/2,0);
 	var spmat = new BABYLON.StandardMaterial('combinedMaterial', scene);
 	spmat.diffuseColor = color==="red"?new BABYLON.Color3(1, 0, 0):color==="pink"?new BABYLON.Color3(1, 0.75, 1):color==="blue"?new BABYLON.Color3(0,1,1):new BABYLON.Color3(1,0.75,0);
+	if(scare){spmat.diffuseColor = new BABYLON.Color3(0,0,1);}
 	sphere.material = spmat;
 	var cymat = new BABYLON.StandardMaterial('combinedMaterial', scene);
 	const texture = new BABYLON.DynamicTexture("texture",{width:200,height:100},scene);
@@ -104,6 +105,7 @@ function ghost(scene,color = "red"){
 	cylinder.material = cymat;
 	const ctx = texture.getContext();
 	ctx.fillStyle = color==="red"?"rgb(255,0,0)":color==="pink"?"rgb(255,191,255)":color==="blue"?"rgb(0,255,255)":"rgb(255,191,0)";
+	if(scare){ctx.fillStyle = "rgb(0,0,255)";}
 	ctx.fillRect(0,0,200,100);
 	ctx.fillStyle = "white";
 	ctx.beginPath();
@@ -127,7 +129,7 @@ function ghost(scene,color = "red"){
 	var a = BABYLON.Mesh.MergeMeshes([cylinder,sphere], true, false, null, false, true);
 	return a;
 }
-function red(g,p,m,d){
+function red(g,p,m,d,scare = false){
 	var ray = [new BABYLON.Ray(g.position,new BABYLON.Vector3(1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,1),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(-1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,-1),size)];
     
 	var poss = [0,0,0,0];
@@ -140,25 +142,32 @@ function red(g,p,m,d){
 		var ang = Math.atan2(p.position.z-g.position.z,p.position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===3?3:1;
+		if(scare){d += Math.round(Math.random())===0?3:1;}
+		else{d += ang===3?3:1;}
 	}
 	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
 		var ang =  Math.atan2(p.position.z-g.position.z,p.position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===1?1:0;
+		if(scare){d += Math.round(Math.random())===0?1:0;}
+		else{d += ang===1?1:0;}
 	}
 	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
 		var ang = Math.atan2(p.position.z-g.position.z,p.position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===3?3:0;
+		if(scare){d += Math.round(Math.random())===0?3:0;}
+		else{d += ang===3?3:0;}
 	}
 	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
 		var ang = Math.atan2(p.position.z-g.position.z,p.position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===0?0:ang===1?1:3;
+		if(scare){
+			var dir = Math.round(Math.random()*2);
+			d += dir===0?0:dir===1?1:3;
+		}
+		else{d += ang===0?0:ang===1?1:3;}
 	}
 	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
 		d += 2;
@@ -166,7 +175,7 @@ function red(g,p,m,d){
 	if(d>=4){d = d%4;}
 	return d;
 }
-function pink(g,p,m,d){
+function pink(g,p,m,d,scare = false){
 	var ray = [new BABYLON.Ray(g.position,new BABYLON.Vector3(1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,1),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(-1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,-1),size)];
     
 	var poss = [0,0,0,0];
@@ -183,25 +192,32 @@ function pink(g,p,m,d){
 		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===3?3:1;
+		if(scare){d += Math.round(Math.random())===0?3:1;}
+		else{d += ang===3?3:1;}
 	}
 	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
 		var ang =  Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===1?1:0;
+		if(scare){d += Math.round(Math.random())===0?1:0}
+		else{d += ang===1?1:0;}
 	}
 	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
 		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===3?3:0;
+		if(scare){d += Math.round(Math.random())===0?3:0}
+		else{d += ang===3?3:0;}
 	}
 	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
 		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===1?1:ang===0?0:3;
+		if(scare){
+			var dir = Math.round(Math.random()*2);
+			d += dir===0?1:dir===1?0:3;
+		}
+		else{d += ang===1?1:ang===0?0:3;}
 	}
 	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
 		d += 2;
@@ -209,50 +225,7 @@ function pink(g,p,m,d){
 	if(d>=4){d = d%4;}
 	return d;
 }
-function pink(g,p,m,d){
-	var ray = [new BABYLON.Ray(g.position,new BABYLON.Vector3(1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,1),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(-1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,-1),size)];
-    
-	var poss = [0,0,0,0];
-	for(var i = 0; i<ray.length; i++){
-		if(!m.intersects(ray[i]).hit){poss[i] = 1;}
-	}
-	var rot = Math.round(scale((p.rotation.y + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
-	rot += 1;
-	rot = rot<0?4+rot:rot%4;
-	var position = {x:Math.round(scale(p.position.x,-36*size,21*size,-36,21))*size-Math.cos(rot*Math.PI/2)*size*4,z:Math.round(scale(p.position.z,-1*size,16*size,-1,16))*size+Math.sin(rot*Math.PI/2)*size*4};
-	if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){d += 1;}
-	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){d +=3;}
-	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
-		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
-		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
-		ang = ang<0?4+ang:ang;
-		d += ang===3?3:1;
-	}
-	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
-		var ang =  Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
-		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
-		ang = ang<0?4+ang:ang;
-		d += ang===1?1:0;
-	}
-	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
-		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
-		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
-		ang = ang<0?4+ang:ang;
-		d += ang===3?3:0;
-	}
-	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
-		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
-		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
-		ang = ang<0?4+ang:ang;
-		d += ang===1?1:ang===0?0:3;
-	}
-	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
-		d += 2;
-	}
-	if(d>=4){d = d%4;}
-	return d;
-}
-function blue(g,r,p,m,d){
+function blue(g,r,p,m,d,scare = false){
 	var ray = [new BABYLON.Ray(g.position,new BABYLON.Vector3(1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,1),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(-1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,-1),size)];
     
 	var poss = [0,0,0,0];
@@ -271,25 +244,32 @@ function blue(g,r,p,m,d){
 		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===3?3:1;
+		if(scare){d += Math.round(Math.random())===0?3:1}
+		else{d += ang===3?3:1;}
 	}
 	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
 		var ang =  Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===1?1:0;
+		if(scare){d += Math.round(Math.random())===0?1:0}
+		else{d += ang===1?1:0;}
 	}
 	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
 		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===3?3:0;
+		if(scare){d += Math.round(Math.random())===0?3:0}
+		else{d += ang===3?3:0;}
 	}
 	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
 		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===1?1:ang===0?0:3;
+		if(scare){
+			var dir = Math.round(Math.random()*2);
+			d += dir===0?1:dir===1?0:3;
+		}
+		else{d += ang===1?1:ang===0?0:3;}
 	}
 	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
 		d += 2;
@@ -314,25 +294,32 @@ function orange(g,p,m,d,scatter = false){
 		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===3?3:1;
+		if(scare){d += Math.round(Math.random())===0?3:1}
+		else{d += ang===3?3:1;}
 	}
 	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
 		var ang =  Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===1?1:0;
+		if(scare){d += Math.round(Math.random())===0?1:0}
+		else{d += ang===1?1:0;}
 	}
 	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
 		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===3?3:0;
+		if(scare){d += Math.round(Math.random())===0?3:0}
+		else{d += ang===3?3:0;}
 	}
 	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
 		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
 		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
 		ang = ang<0?4+ang:ang;
-		d += ang===0?0:ang===1?1:3;
+		if(scare){
+			var dir = Math.round(Math.random()*2);
+			d += dir===0?1:dir===1?0:3;
+		}
+		else{d += ang===1?1:ang===0?0:3;}
 	}
 	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
 		d += 2;
@@ -340,14 +327,10 @@ function orange(g,p,m,d,scatter = false){
 	if(d>=4){d = d%4;}
 	return d;
 }
-// Function to create the scene
 function createScene(){
-    // Create a basic Babylon Scene object
     const scene = new BABYLON.Scene(engine);
-    // Create a camera and position it at (0, 5, -10)
     const camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 0.5, 0), scene);
 	camera.speed = 0.4;
-    // Attach the camera to the canvas to enable user input
     camera.attachControl(canvas, true);
 	var cam2 = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(-7*size, 60*size, 19/2*size), scene);
 	cam2.setTarget(BABYLON.Vector3.Zero());
@@ -379,6 +362,7 @@ function createScene(){
 	var clydeScatter = false;
 	var gd = [0,2,2,0];
 	var gp = [];
+	var scatter = [1000,false];
 	for(var i = 0; i<g.length; i++){
 	gp.push([g[i].position.x+Math.cos(gd[i]*Math.PI/2)*size,g[i].position.z+Math.sin(gd[i]*Math.PI/2)*size])
 	}
@@ -423,8 +407,13 @@ function createScene(){
 		for(var i = 0; i<showPoint.length; i++){
 			if(BABYLON.Vector3.Distance(camera.position, showPoint[i].position)<size){
 				showPoint[i].dispose();
+				if(dist(camera.position.x,camera.position.z,-35,0)<1){
+					scatter[1] = true;
+				}
 			}
 		}
+		if(scatter[1] === true){scatter[0] -= 1;}
+		if(scatter[0] <= 0){scatter[0] = 1000; scatter[1] = false;}
 		if(camera.position.x<-36*size){camera.position.x = 21*size;}
 		if(camera.position.x>21*size){camera.position.x = -36*size;}
 		if(keys["a"]){camera.rotation.y-=3*Math.PI/180;}
