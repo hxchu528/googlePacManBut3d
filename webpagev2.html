@@ -23,6 +23,7 @@ const engine = new BABYLON.Engine(canvas, true);
 var size = 3;
 var camP = [];
 var point = [];
+function dist(x,y,x1,y1){return ((x1-x)**2+(y1-y)**2)**0.5;}
 function expand(str) {
 	let expandedStr = '';
 	let i = 0;
@@ -95,14 +96,14 @@ function ghost(scene,color = "red"){
 	cylinder.position = new BABYLON.Vector3(0,size/4,0);
 	sphere.position = new BABYLON.Vector3(0,size/2,0);
 	var spmat = new BABYLON.StandardMaterial('combinedMaterial', scene);
-	spmat.diffuseColor = color==="red"?new BABYLON.Color3(1, 0, 0):color==="pink"?new BABYLON.Color3(1, 0.75, 1):new BABYLON.Color3(0,1,1);
+	spmat.diffuseColor = color==="red"?new BABYLON.Color3(1, 0, 0):color==="pink"?new BABYLON.Color3(1, 0.75, 1):color==="blue"?new BABYLON.Color3(0,1,1):new BABYLON.Color3(1,0.75,0);
 	sphere.material = spmat;
 	var cymat = new BABYLON.StandardMaterial('combinedMaterial', scene);
 	const texture = new BABYLON.DynamicTexture("texture",{width:200,height:100},scene);
 	cymat.diffuseTexture = texture;
 	cylinder.material = cymat;
 	const ctx = texture.getContext();
-	ctx.fillStyle = color==="red"?"rgb(255,0,0)":color==="pink"?"rgb(255,191,255)":"rgb(0,255,255)";
+	ctx.fillStyle = color==="red"?"rgb(255,0,0)":color==="pink"?"rgb(255,191,255)":color==="blue"?"rgb(0,255,255)":"rgb(255,191,0)";
 	ctx.fillRect(0,0,200,100);
 	ctx.fillStyle = "white";
 	ctx.beginPath();
@@ -296,13 +297,56 @@ function blue(g,r,p,m,d){
 	if(d>=4){d = d%4;}
 	return d;
 }
+function orange(g,p,m,d,scatter = false){
+	var ray = [new BABYLON.Ray(g.position,new BABYLON.Vector3(1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,1),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(-1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,-1),size)];
+    
+	var poss = [0,0,0,0];
+	for(var i = 0; i<ray.length; i++){
+		if(!m.intersects(ray[i]).hit){poss[i] = 1;}
+	}
+	position = {x:p.position.x,z:p.position.z}
+	if(((g.position.x-position.x)**2+(g.position.z-position.z)**2)**0.5<=8*size && scatter){
+		position = {x:20*size,z:0};
+	}
+	if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){d += 1;}
+	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){d +=3;}
+	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
+		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
+		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
+		ang = ang<0?4+ang:ang;
+		d += ang===3?3:1;
+	}
+	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
+		var ang =  Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
+		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
+		ang = ang<0?4+ang:ang;
+		d += ang===1?1:0;
+	}
+	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
+		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
+		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
+		ang = ang<0?4+ang:ang;
+		d += ang===3?3:0;
+	}
+	else if(poss[d%poss.length]!=0 && poss[(d+1)%poss.length]!=0 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=0){
+		var ang = Math.atan2(position.z-g.position.z,position.x-g.position.x)-Math.PI/2*d;
+		ang = Math.round(scale((ang + 2 * Math.PI) % (2 * Math.PI),0,2*Math.PI,0,4))%4;
+		ang = ang<0?4+ang:ang;
+		d += ang===0?0:ang===1?1:3;
+	}
+	else if(poss[d%poss.length]!=1 && poss[(d+1)%poss.length]!=1 && poss[(d+2)%poss.length]!=0 && poss[(d+3)%poss.length]!=1){
+		d += 2;
+	}
+	if(d>=4){d = d%4;}
+	return d;
+}
 // Function to create the scene
 function createScene(){
     // Create a basic Babylon Scene object
     const scene = new BABYLON.Scene(engine);
     // Create a camera and position it at (0, 5, -10)
     const camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 0.5, 0), scene);
-	camera.speed = 0.2;
+	camera.speed = 0.4;
     // Attach the camera to the canvas to enable user input
     camera.attachControl(canvas, true);
 	var cam2 = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(-7*size, 60*size, 19/2*size), scene);
@@ -327,11 +371,13 @@ function createScene(){
 		mat.diffuseColor = new BABYLON.Color3(1, 1, 0);
 		showPoint[showPoint.length-1].material = mat;
 	}
-	var g = [ghost(scene,"red"),ghost(scene,"pink"),ghost(scene,"blue")];
+	var g = [ghost(scene,"red"),ghost(scene,"pink"),ghost(scene,"blue"),ghost(scene,"orange")];
 	g[0].position = new BABYLON.Vector3(-1*size,0.1,11*size);
 	g[1].position = new BABYLON.Vector3(1*size,0.1,11*size);
 	g[2].position = new BABYLON.Vector3(0*size,0.1,11*size);
-	var gd = [0,2,2];
+	g[3].position = new BABYLON.Vector3(-2*size,0.1,11*size);
+	var clydeScatter = false;
+	var gd = [0,2,2,0];
 	var gp = [];
 	for(var i = 0; i<g.length; i++){
 	gp.push([g[i].position.x+Math.cos(gd[i]*Math.PI/2)*size,g[i].position.z+Math.sin(gd[i]*Math.PI/2)*size])
@@ -344,19 +390,26 @@ function createScene(){
 	ground.position.x = -7.5*size;
 	scene.registerBeforeRender(function(){
 		for(var i = 0; i<g.length; i+=1){
+		if(i===3 && dist(g[i].position.x,g[i].position.z,camera.position.x,camera.position.z)<=8*size){
+			clydeScatter = true;
+		}else{
+			clydeScatter = false;
+		}
 		if((gp[i][0]-g[i].position.x)**2+(gp[i][1]-g[i].position.z)**2<0.5){
 			g[i].position.x = gp[i][0];
 			g[i].position.z = gp[i][1];
-			gd[i] = i===0?red(g[i],camera,m,gd[i]):i===1?pink(g[i],camera,m,gd[i]):blue(g[i],g[0],camera,m,gd[i]);
+			gd[i] = i===0?red(g[i],camera,m,gd[i]):i===1?pink(g[i],camera,m,gd[i]):i===2?blue(g[i],g[0],camera,m,gd[i]):orange(g[i],camera,m,gd[i],clydeScatter);
 			gp[i] = [g[i].position.x+Math.cos(gd[i]*Math.PI/2)*size,g[i].position.z+Math.sin(gd[i]*Math.PI/2)*size]
 		}
 		g[i].rotation = new BABYLON.Vector3(0,gd[i]*Math.PI/2,0);
-		if(g[i].position.x<-36*size){g[i].position.x = 21*size;gd[i] = pink(g[i],camera,m,gd[i]);
+		if(g[i].position.x<-36*size){
+			g[i].position.x = 21*size;
+			gd[i] = i===0?red(g[i],camera,m,gd[i]):i===1?pink(g[i],camera,m,gd[i]):i===2?blue(g[i],g[0],camera,m,gd[i]):orange(g[i],camera,m,gd[i],clydeScatter);
 			gp[i] = [g[i].position.x+Math.cos(gd[i]*Math.PI/2)*size,g[i].position.z+Math.sin(gd[i]*Math.PI/2)*size]
 		}
 		if(g[i].position.x>21*size){
 			g[i].position.x = -36*size;
-			gd[i] = i===0?red(g[i],camera,m,gd[i]):i===1?pink(g[i],camera,m,gd[i]):blue(g[i],g[0],camera,m,gd[i]);
+			gd[i] = i===0?red(g[i],camera,m,gd[i]):i===1?pink(g[i],camera,m,gd[i]):i===2?blue(g[i],g[0],camera,m,gd[i]):orange(g[i],camera,m,gd[i],clydeScatter);
 			gp[i] = [g[i].position.x+Math.cos(gd[i]*Math.PI/2)*size,g[i].position.z+Math.sin(gd[i]*Math.PI/2)*size]
 		}
 			g[i].position.x+=Math.cos(gd[i]*Math.PI/2)*0.1;
