@@ -23,6 +23,9 @@ const engine = new BABYLON.Engine(canvas, true);
 var size = 3;
 var camP = [];
 var point = [];
+var scatter = [1000,false];
+var queue = [];
+var time = 0;
 function dist(x,y,x1,y1){return ((x1-x)**2+(y1-y)**2)**0.5;}
 function expand(str) {
 	let expandedStr = '';
@@ -90,22 +93,14 @@ function ray (origin, direction, scene) {
 	}
 	return undefined;
 };
-function ghost(scene,color = "red", scare = false){
-	const cylinder = BABYLON.MeshBuilder.CreateCylinder("cylinder", { height: size/2, diameterTop: 0.4*size, diameterBottom: 0.4*size, tessellation: 24 }, scene);
-	const sphere = BABYLON.MeshBuilder.CreateSphere("sphere",{diameter:0.4*size},scene);
-	cylinder.position = new BABYLON.Vector3(0,size/4,0);
-	sphere.position = new BABYLON.Vector3(0,size/2,0);
-	var spmat = new BABYLON.StandardMaterial('combinedMaterial', scene);
-	spmat.diffuseColor = color==="red"?new BABYLON.Color3(1, 0, 0):color==="pink"?new BABYLON.Color3(1, 0.75, 1):color==="blue"?new BABYLON.Color3(0,1,1):new BABYLON.Color3(1,0.75,0);
-	if(scare){spmat.diffuseColor = new BABYLON.Color3(0,0,1);}
-	sphere.material = spmat;
-	var cymat = new BABYLON.StandardMaterial('combinedMaterial', scene);
-	const texture = new BABYLON.DynamicTexture("texture",{width:200,height:100},scene);
-	cymat.diffuseTexture = texture;
-	cylinder.material = cymat;
+function ghostMaterial(scene,color,scare){
+	const material = new BABYLON.StandardMaterial("mat",scene);
+    const texture = new BABYLON.DynamicTexture("texture",{width:200,height:100},scene);
 	const ctx = texture.getContext();
 	ctx.fillStyle = color==="red"?"rgb(255,0,0)":color==="pink"?"rgb(255,191,255)":color==="blue"?"rgb(0,255,255)":"rgb(255,191,0)";
-	if(scare){ctx.fillStyle = "rgb(0,0,255)";}
+	if(scare){
+		ctx.fillStyle = "rgb(0,0,255)";
+	}
 	ctx.fillRect(0,0,200,100);
 	ctx.fillStyle = "white";
 	ctx.beginPath();
@@ -116,7 +111,7 @@ function ghost(scene,color = "red", scare = false){
 		ctx.arc(15,30,7,0,2*Math.PI);
 	ctx.stroke();
 	ctx.fill();
-	ctx.fillStyle = "black";
+		ctx.fillStyle = "black";
 	ctx.beginPath();
 		ctx.arc(185,30,3,0,2*Math.PI);
 	ctx.stroke();
@@ -126,7 +121,16 @@ function ghost(scene,color = "red", scare = false){
 	ctx.stroke();
 	ctx.fill();
 	texture.update();
+	material.diffuseTexture = texture;
+	return material;
+}
+function ghost(scene,color = "red",scare){
+	const cylinder = BABYLON.MeshBuilder.CreateCylinder("cylinder", { height: size/2, diameterTop: 0.4*size, diameterBottom: 0.4*size, tessellation: 24 }, scene);
+	const sphere = BABYLON.MeshBuilder.CreateSphere("sphere",{diameter:0.4*size},scene);
+	cylinder.position = new BABYLON.Vector3(0,size/4,0);
+	sphere.position = new BABYLON.Vector3(0,size/2,0);
 	var a = BABYLON.Mesh.MergeMeshes([cylinder,sphere], true, false, null, false, true);
+	a.material = ghostMaterial(scene,color,scare);
 	return a;
 }
 function red(g,p,m,d,scare = false){
@@ -277,7 +281,7 @@ function blue(g,r,p,m,d,scare = false){
 	if(d>=4){d = d%4;}
 	return d;
 }
-function orange(g,p,m,d,scatter = false){
+function orange(g,p,m,d,scatter = false, scare = false){
 	var ray = [new BABYLON.Ray(g.position,new BABYLON.Vector3(1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,1),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(-1,0,0),size),new BABYLON.Ray(g.position,new BABYLON.Vector3(0,0,-1),size)];
     
 	var poss = [0,0,0,0];
@@ -356,13 +360,13 @@ function createScene(){
 	}
 	var g = [ghost(scene,"red"),ghost(scene,"pink"),ghost(scene,"blue"),ghost(scene,"orange")];
 	g[0].position = new BABYLON.Vector3(-1*size,0.1,11*size);
-	g[1].position = new BABYLON.Vector3(1*size,0.1,11*size);
-	g[2].position = new BABYLON.Vector3(0*size,0.1,11*size);
-	g[3].position = new BABYLON.Vector3(-2*size,0.1,11*size);
+	g[1].position = new BABYLON.Vector3(-1*size,0.1,9*size);
+	g[2].position = new BABYLON.Vector3(0*size,0.1,8*size);
+	g[3].position = new BABYLON.Vector3(1*size,0.1,9*size);
+	queue = [1,2,3];
 	var clydeScatter = false;
 	var gd = [0,2,2,0];
 	var gp = [];
-	var scatter = [1000,false];
 	for(var i = 0; i<g.length; i++){
 	gp.push([g[i].position.x+Math.cos(gd[i]*Math.PI/2)*size,g[i].position.z+Math.sin(gd[i]*Math.PI/2)*size])
 	}
@@ -372,7 +376,16 @@ function createScene(){
 	ground.material = material;
 	ground.position.z = 7*size;
 	ground.position.x = -7.5*size;
-	scene.registerBeforeRender(function(){
+	scene.registerBeforeRender(function(){try{
+		time+=1;
+		if(time>99){
+			time = 0;
+			if(queue.length>0){
+				g[queue[0]].position = new BABYLON.Vector3(-1*size,0.1,11*size);
+				gd[queue[0]] = 0;
+				queue.shift();
+			}
+		}
 		for(var i = 0; i<g.length; i+=1){
 		if(i===3 && dist(g[i].position.x,g[i].position.z,camera.position.x,camera.position.z)<=8*size){
 			clydeScatter = true;
@@ -398,16 +411,25 @@ function createScene(){
 		}
 			g[i].position.x+=Math.cos(gd[i]*Math.PI/2)*0.1;
 			g[i].position.z+=Math.sin(gd[i]*Math.PI/2)*0.1;
+			if(scatter[1]){
+				g[i].material = ghostMaterial(scene,i===0?"red":i===1?"pink":i===2?"blue":"orange",true);
+				if(dist(g[i].position.x,g[i].position.z,camera.position.x,camera.position.z)<1){
+					queue.push(i);
+					g[i].position = new BABYLON.Vector3(-1*size,0.1,9*size);
+				}
+			}else{
+				g[i].material = ghostMaterial(scene,i===0?"red":i===1?"pink":i===2?"blue":"orange",false);
+			}
 		}
 		scene.activeCamera = camera;
 		camera.position.y = 0.6;
 		const forwardRay = camera.getForwardRay();
 		light.direction = forwardRay.direction;
 		light.intensity = 0.7;
-		for(var i = 0; i<showPoint.length; i++){
-			if(BABYLON.Vector3.Distance(camera.position, showPoint[i].position)<size){
-				showPoint[i].dispose();
-				if(dist(camera.position.x,camera.position.z,-35,0)<1){
+		for(var j = 0; j<showPoint.length; j++){
+			if(BABYLON.Vector3.Distance(camera.position, showPoint[j].position)<size){
+				showPoint[j].dispose();
+				if(dist(camera.position.x,camera.position.z,-35*size,0)<1){
 					scatter[1] = true;
 				}
 			}
@@ -422,6 +444,7 @@ function createScene(){
 			scene.activeCamera = cam2;
 			light.intensity = 0;
 		}
+        }catch(e){document.write(e+"<br>")}
 	})
     return scene;
 };
