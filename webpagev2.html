@@ -1,7 +1,13 @@
 <!DOCTYPE html>
 <html>
 <style>
+html{
+width:100vw;
+height:100vh;
+}
 body{
+width:100vw;
+height:100vh;
 overflow-y:hidden;
 overflow-x:hidden;
 }
@@ -11,10 +17,16 @@ overflow-x:hidden;
 }
 </style>
 <body>
+<div class = "a">
 <canvas id="renderCanvas"></canvas>
+</div>
+<div class = "a"><h1>You Lose!</h1></div>
 </body>
 <script src="https://cdn.babylonjs.com/babylon.js"></script>
 <script>
+var page = document.getElementsByClassName("a");
+page[0].style.display = "block";
+page[1].style.display = "none";
 var keys = [];
 window.addEventListener("keydown",()=>{keys[event.key] = true})
 window.addEventListener("keyup",()=>{keys[event.key] = false})
@@ -23,10 +35,14 @@ const engine = new BABYLON.Engine(canvas, true);
 var size = 3;
 var camP = [];
 var point = [];
-var scatter = [1000,false];
+var scatter = [1000,[false,false,false,false]];
 var queue = [];
 var time = 0;
 function dist(x,y,x1,y1){return ((x1-x)**2+(y1-y)**2)**0.5;}
+function reduce(f,arr,acc){
+	for(var i = 0; i<arr.length; i++){acc+=f(arr[i])}
+	return acc;
+}
 function expand(str) {
 	let expandedStr = '';
 	let i = 0;
@@ -331,6 +347,7 @@ function orange(g,p,m,d,scatter = false, scare = false){
 	if(d>=4){d = d%4;}
 	return d;
 }
+var score = [0,0,undefined];
 function createScene(){
     const scene = new BABYLON.Scene(engine);
     const camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 0.5, 0), scene);
@@ -358,12 +375,13 @@ function createScene(){
 		mat.diffuseColor = new BABYLON.Color3(1, 1, 0);
 		showPoint[showPoint.length-1].material = mat;
 	}
+	score[1] = showPoint.length;
 	var g = [ghost(scene,"red"),ghost(scene,"pink"),ghost(scene,"blue"),ghost(scene,"orange")];
 	g[0].position = new BABYLON.Vector3(-1*size,0.1,11*size);
 	g[1].position = new BABYLON.Vector3(-1*size,0.1,9*size);
 	g[2].position = new BABYLON.Vector3(0*size,0.1,8*size);
 	g[3].position = new BABYLON.Vector3(1*size,0.1,9*size);
-	queue = [1,2,3];
+	queue = [[1,100],[2,200],[3,300]];
 	var clydeScatter = false;
 	var gd = [0,2,2,0];
 	var gp = [];
@@ -376,14 +394,17 @@ function createScene(){
 	ground.material = material;
 	ground.position.z = 7*size;
 	ground.position.x = -7.5*size;
-	scene.registerBeforeRender(function(){try{
-		time+=1;
-		if(time>99){
-			time = 0;
-			if(queue.length>0){
-				g[queue[0]].position = new BABYLON.Vector3(-1*size,0.1,11*size);
-				gd[queue[0]] = 0;
-				queue.shift();
+	scene.registerBeforeRender(function(){
+		if(queue.length>0){
+			for(var i = 0; i<queue.length; i++){
+				if(queue[i][1]<=0){
+					g[queue[i][0]].position = new BABYLON.Vector3(-1*size,0.1,11*size);
+					gd[queue[i][0]] = 0;
+					gp[queue[i][0]] = [-1*size+size,11*size];
+					queue.shift();
+				}else{
+					queue[i][1]-=1;
+				}
 			}
 		}
 		for(var i = 0; i<g.length; i+=1){
@@ -395,7 +416,7 @@ function createScene(){
 		if((gp[i][0]-g[i].position.x)**2+(gp[i][1]-g[i].position.z)**2<0.5){
 			g[i].position.x = gp[i][0];
 			g[i].position.z = gp[i][1];
-			gd[i] = i===0?red(g[i],camera,m,gd[i]):i===1?pink(g[i],camera,m,gd[i]):i===2?blue(g[i],g[0],camera,m,gd[i]):orange(g[i],camera,m,gd[i],clydeScatter);
+			gd[i] = i===0?red(g[i],camera,m,gd[i],scatter[1][0]):i===1?pink(g[i],camera,m,gd[i],scatter[1][1]):i===2?blue(g[i],g[0],camera,m,gd[i],scatter[1][2]):orange(g[i],camera,m,gd[i],clydeScatter,scatter[1][3]);
 			gp[i] = [g[i].position.x+Math.cos(gd[i]*Math.PI/2)*size,g[i].position.z+Math.sin(gd[i]*Math.PI/2)*size]
 		}
 		g[i].rotation = new BABYLON.Vector3(0,gd[i]*Math.PI/2,0);
@@ -411,31 +432,48 @@ function createScene(){
 		}
 			g[i].position.x+=Math.cos(gd[i]*Math.PI/2)*0.1;
 			g[i].position.z+=Math.sin(gd[i]*Math.PI/2)*0.1;
-			if(scatter[1]){
-				g[i].material = ghostMaterial(scene,i===0?"red":i===1?"pink":i===2?"blue":"orange",true);
-				if(dist(g[i].position.x,g[i].position.z,camera.position.x,camera.position.z)<1){
-					queue.push(i);
+			if(dist(g[i].position.x,g[i].position.z,camera.position.x,camera.position.z)<1){score[2]=false;}
+			if(scatter[1][i]){
+				g[i].material = ghostMaterial(scene,i===0?"red":i===1?"pink":i===2?"blue":"orange",scatter[1][i]);
+				if(dist(g[i].position.x,g[i].position.z,camera.position.x,camera.position.z)<size){
+					queue.push([i,100]);
+					gd[i] = 3;
+					gp[i] = [-1*size,9*size-size]
 					g[i].position = new BABYLON.Vector3(-1*size,0.1,9*size);
+					scatter[1][i] = false;
+					g[i].material = ghostMaterial(scene,i===0?"red":i===1?"pink":i===2?"blue":"orange",scatter[1][i]);
 				}
 			}else{
 				g[i].material = ghostMaterial(scene,i===0?"red":i===1?"pink":i===2?"blue":"orange",false);
 			}
 		}
 		scene.activeCamera = camera;
-		camera.position.y = 0.6;
+		if(score[2]===undefined){
+		camera.position.y = 0.6;}
+		else if(score[2]===true){
+			if(keys["w"]){camera.rotation.x-=0.3*Math.PI/180;}
+			if(keys["s"]){camera.rotation.x+=0.3*Math.PI/180;}
+		}else if(score[2]===false){
+			page[0].style.display = "none";
+			page[1].style.display = "block";
+		}
 		const forwardRay = camera.getForwardRay();
 		light.direction = forwardRay.direction;
 		light.intensity = 0.7;
 		for(var j = 0; j<showPoint.length; j++){
 			if(BABYLON.Vector3.Distance(camera.position, showPoint[j].position)<size){
-				showPoint[j].dispose();
-				if(dist(camera.position.x,camera.position.z,-35*size,0)<1){
-					scatter[1] = true;
+				if(dist(camera.position.x,camera.position.z,-35*size,0)<size || dist(camera.position.x, camera.position.z, -35*size, 12*size)<size || dist(camera.position.x,camera.position.z,-25*size,7*size)<size || dist(camera.position.x,camera.position.z,20*size,0*size)<size || dist(camera.position.x,camera.position.z,20*size,12*size)<size){
+					scatter[1] = scatter[1].map(val=>val = true);
+					scatter[0] = 1000;
 				}
+				showPoint[j].dispose();
+				showPoint.splice(j,1);
+				score[0]+=1;
 			}
 		}
-		if(scatter[1] === true){scatter[0] -= 1;}
-		if(scatter[0] <= 0){scatter[0] = 1000; scatter[1] = false;}
+		if(score[0]===score[1]){score[2] = true;}
+		if(reduce(val=>val===true?1:0,scatter[1],0)>0){scatter[0] -= 1;}
+		if(scatter[0] <= 0 || reduce(val=>val===true?1:0,scatter[1],0)===0){scatter[0] = 1000; scatter[1] = scatter[1].map(val => val = false);}
 		if(camera.position.x<-36*size){camera.position.x = 21*size;}
 		if(camera.position.x>21*size){camera.position.x = -36*size;}
 		if(keys["a"]){camera.rotation.y-=3*Math.PI/180;}
@@ -444,7 +482,6 @@ function createScene(){
 			scene.activeCamera = cam2;
 			light.intensity = 0;
 		}
-        }catch(e){document.write(e+"<br>")}
 	})
     return scene;
 };
